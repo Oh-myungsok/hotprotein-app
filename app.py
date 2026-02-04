@@ -1,13 +1,10 @@
-from flask import Flask, request
+import streamlit as st
 from Bio import SeqIO
-import os
 
-app = Flask(__name__)
-
-# FASTA 파일 경로 (압축 풀어서 나온 fasta 파일을 지정하세요)
+# FASTA 파일 경로
 FASTA_FILE = "d1_fasta_clean.fasta"
 
-# 아미노산 분자량 대략값 (단순 평균값, 더 정밀하게 하려면 BioPython의 ProtParam 사용 가능)
+# 아미노산 분자량 대략값
 aa_weights = {
     'A': 89.1, 'R': 174.2, 'N': 132.1, 'D': 133.1,
     'C': 121.2, 'E': 147.1, 'Q': 146.2, 'G': 75.1,
@@ -19,12 +16,16 @@ aa_weights = {
 def calc_mw(seq):
     return sum(aa_weights.get(aa, 0) for aa in seq)
 
-@app.route("/search")
-def search():
-    min_mw = float(request.args.get("min_mw", 10000))
-    max_mw = float(request.args.get("max_mw", 50000))
-    keyword = request.args.get("keyword", "").lower()
+# Streamlit UI
+st.title("HotProtein Search App 🔬")
+st.write("FASTA 파일에서 단백질을 검색합니다.")
 
+# 사용자 입력
+min_mw = st.number_input("최소 분자량", value=10000.0)
+max_mw = st.number_input("최대 분자량", value=50000.0)
+keyword = st.text_input("검색 키워드").lower()
+
+if st.button("검색 실행"):
     results = []
     for record in SeqIO.parse(FASTA_FILE, "fasta"):
         mw = calc_mw(str(record.seq))
@@ -32,11 +33,9 @@ def search():
             if keyword in record.description.lower():
                 results.append((record.id, mw, str(record.seq)[:50] + "..."))
 
-    html = "<h2>검색 결과</h2><table border=1><tr><th>ID</th><th>MW</th><th>Sequence (앞 50aa)</th></tr>"
-    for rid, mw, seq in results:
-        html += f"<tr><td>{rid}</td><td>{mw:.1f}</td><td>{seq}</td></tr>"
-    html += "</table>"
-    return html
-
-if __name__ == "__main__":
-    app.run(debug=True)
+    if results:
+        st.subheader("검색 결과")
+        st.write("총 결과 수:", len(results))
+        st.table(results)
+    else:
+        st.warning("조건에 맞는 단백질이 없습니다.")
