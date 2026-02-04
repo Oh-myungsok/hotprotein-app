@@ -1,0 +1,6 @@
+streamlit
+flask
+numpy
+pandas
+torch
+biopython
