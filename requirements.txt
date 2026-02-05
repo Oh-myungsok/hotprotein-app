@@ -1,4 +1,4 @@
 streamlit
-biopython
+biopython==1.81
 numpy
 pandas
